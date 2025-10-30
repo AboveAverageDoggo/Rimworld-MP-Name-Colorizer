@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ColorText Gen</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap" rel="stylesheet">
+<style>
+  * { font-family: 'Segoe UI', 'Noto Color Emoji', sans-serif !important; }
+
+  :root {
+    --bg-main: #1a1a1a;
+    --bg-app: #252525;
+    --bg-section: #2e2e2e;
+    --bg-input: #333;
+    --border: #444;
+    --text: #ddd;
+    --text-muted: #aaa;
+    --accent: #4caf50;
+    --danger: #d32f2f;
+    --doggo: #ff69b4;
+  }
+
+  body {
+    font-family: 'Segoe UI', 'Noto Color Emoji', sans-serif;
+    background: var(--bg-main);
+    color: var(--text);
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #app {
+    max-width: 1000px;
+    width: 100%;
+    background: var(--bg-app);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.6);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    overflow: hidden;
+    position: relative;
+    z-index: 2;
+  }
+
+  @media (max-width: 800px) {
+    #app { grid-template-columns: 1fr; }
+  }
+
+  .section {
+    background: var(--bg-section);
+    border-radius: 12px;
+    padding: 14px;
+    border: 1px solid var(--border);
+  }
+
+  h2 {
+    font-size: 1.2em;
+    margin: 0 0 10px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  textarea, input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid var(--border);
+    background: var(--bg-input);
+    color: var(--text);
+    border-radius: 6px;
+  }
+  textarea { height: 60px; resize: vertical; }
+
+  .opts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 8px;
+    margin: 12px 0;
+  }
+  .opt-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: #3a3a3a;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all .2s ease;
+    user-select: none;
+  }
+  .opt-label:hover { background: #454545; }
+  .opt-label.checked {
+    background: var(--accent);
+    color: white;
+    font-weight: 500;
+  }
+  .opt-label input[type="checkbox"] { accent-color: white; transform: scale(1.1); }
+
+  .colors { display: flex; gap: 10px; margin: 10px 0; }
+  input[type="color"] { width: 50px; height: 30px; border: none; cursor: pointer; border-radius: 6px; }
+
+  .wheel-container { width: 220px; height: 220px; margin: 15px auto; position: relative; }
+  .wheel {
+    width: 100%; height: 100%; cursor: pointer; border-radius: 50%;
+    background: conic-gradient(red 0deg, yellow 60deg, lime 120deg, cyan 180deg, blue 240deg, magenta 300deg, red 360deg);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+  }
+  .picker-dot {
+    width: 16px; height: 16px; background: #fff; border: 2px solid #000; border-radius: 50%;
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    pointer-events: none; opacity: 0; transition: opacity .2s;
+  }
+
+  .sliders {
+    margin-top: 10px; display: grid; grid-template-columns: 1fr 3fr; gap: 8px; align-items: center; font-size: 13px;
+  }
+  .slider-label { justify-self: end; color: #bbb; }
+  input[type="range"] { accent-color: var(--accent); }
+
+  #recent {
+    max-height: 200px; overflow-y: auto; padding: 6px; background: #2a2a2a; border-radius: 6px;
+  }
+  .recent-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 8px; background: #3a3a3a; border-radius: 6px; margin: 4px 0;
+    font-size: 15px; line-height: 1.4; word-break: break-word; white-space: pre-wrap;
+  }
+  .recent-item:hover { background: #4a4a4a; }
+  .recent-preview { font-family: monospace; font-size: 13px; line-height: 1.4; cursor: pointer; flex: 1; }
+  .remove-btn {
+    width: 20px; height: 20px; background: var(--danger); color: #fff;
+    border-radius: 4px; font-size: 14px; line-height: 18px; text-align: center;
+    cursor: pointer; opacity: 0.8; transition: opacity .2s;
+  }
+  .remove-btn:hover { opacity: 1; }
+
+  #preview {
+    min-height: 60px; max-height: 70px; overflow-y: auto; padding: 12px; border-radius: 6px;
+    background: #2c2c2c; border: 1px solid var(--border);
+    font-size: 15px; white-space: pre-wrap; word-break: break-word; line-height: 1.4;
+  }
+
+  #out {
+    height: 70px; overflow: auto; padding: 10px; border-radius: 6px;
+    background: #333; color: #eee; border: 1px solid var(--border);
+    font-family: monospace; font-size: 13px; white-space: pre-wrap; word-break: break-all; line-height: 1.4;
+  }
+
+  .btn-row { display: flex; gap: 8px; margin: 10px 0 0; align-items: center; }
+  .save-btn, .clear-btn {
+    padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;
+  }
+  .save-btn { background: var(--accent); color: #fff; }
+  .save-btn:hover { background: #45a049; }
+  .clear-btn { background: var(--danger); color: #fff; }
+  .clear-btn:hover { background: #b71c1c; }
+
+  #toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: #333; color: #0f0; padding: 10px 20px; border-radius: 8px;
+    font-size: 14px; opacity: 0; transition: opacity .3s; z-index: 100;
+  }
+
+  /* === DOGGO BUTTON === */
+  #secretBtn {
+    position: absolute;
+    bottom: 10px; right: 10px;
+    width: 40px; height: 40px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0;
+    transition: transform .3s ease;
+  }
+  #secretBtn:hover {
+    transform: scale(1.4);
+  }
+  #secretBtn span {
+    font-size: 32px;
+    opacity: 0;
+    transition: opacity .3s;
+  }
+  #secretBtn:hover span {
+    opacity: 1;
+  }
+
+  /* === DEV MENU === */
+  #devMenu {
+    position: absolute;
+    bottom: 60px; right: 10px;
+    width: 300px;
+    background: #1e1e1e;
+    border: 1px solid #555;
+    border-radius: 12px;
+    padding: 14px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.8);
+    display: none;
+    z-index: 20;
+    color: #fff;
+  }
+  #devMenu.show { display: block; }
+  #devMenu h3 {
+    margin: 0 0 12px;
+    font-size: 1.1em;
+    color: var(--doggo);
+    text-align: center;
+  }
+  .dev-opts { display: grid; gap: 8px; }
+  .dev-label {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 10px;
+    background: #333;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .dev-label input[type="checkbox"] { accent-color: var(--doggo); }
+
+  /* === BACKGROUND PARTY === */
+  #bgParty {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    pointer-events: none;
+    z-index: 1;
+    background: transparent;
+    background-size: cover;
+    background-position: center;
+    transition: background 0.5s ease;
+  }
+
+  /* === DOGGO RAIN === */
+  .doggo-rain {
+    position: fixed; top: -50px; pointer-events: none; z-index: 1000;
+    animation: fall linear forwards;
+    font-size: 28px;
+    user-select: none;
+  }
+  @keyframes fall {
+    to { transform: translateY(110vh); }
+  }
+
+  /* === FLASH === */
+  #flashMsg {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    font-size: 2.5em; font-weight: bold; color: #ff69b4;
+    text-shadow: 0 0 20px #ff1493, 0 0 40px #ff69b4;
+    pointer-events: none; opacity: 0; z-index: 2000;
+    animation: flash 2s ease-out forwards;
+  }
+  @keyframes flash {
+    0%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+  }
+
+  .left-col { grid-column: 1; }
+  .right-col { grid-column: 2; }
+</style>
+</head>
+<body>
+
+<!-- BACKGROUND PARTY -->
+<div id="bgParty"></div>
+
+<div id="app">
+
+<!-- LEFT COLUMN -->
+<div class="left-col">
+  <div class="section">
+    <h2>Input Text</h2>
+    <textarea id="inp" placeholder="Enter text...">[Averagedoggo]</textarea>
+  </div>
+
+  <div class="section">
+    <h2>Effects (Choose One)</h2>
+    <div class="opts">
+      <label class="opt-label"><input type="checkbox" id="default"> Default (Plain)</label>
+      <label class="opt-label"><input type="checkbox" id="bw"> B&W Gradient</label>
+      <label class="opt-label"><input type="checkbox" id="grad"> Color Gradient</label>
+      <label class="opt-label"><input type="checkbox" id="randGrad"> Random Gradient</label>
+      <label class="opt-label"><input type="checkbox" id="rainbowStatic"> Rainbow (Static)</label>
+      <label class="opt-label"><input type="checkbox" id="rainbowAnim"> Rainbow (Animated)</label>
+      <label class="opt-label"><input type="checkbox" id="random"> Random Per Char</label>
+      <label class="opt-label"><input type="checkbox" id="invert"> Invert Colors</label>
+      <label class="opt-label"><input type="checkbox" id="pastel"> Pastel Mode</label>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Gradient Colors</h2>
+    <div class="colors">
+      <input type="color" id="c1" value="#8B0000">
+      <input type="color" id="c2" value="#FF0000">
+    </div>
+
+    <div class="wheel-container">
+      <div id="wheel" class="wheel"><div class="picker-dot" id="dot"></div></div>
+    </div>
+
+    <div class="sliders">
+      <span class="slider-label">Hue</span>
+      <input type="range" id="hue" min="0" max="360" value="0">
+      <span class="slider-label">Sat</span>
+      <input type="range" id="sat" min="0" max="100" value="100">
+      <span class="slider-label">Light</span>
+      <input type="range" id="light" min="0" max="100" value="50">
+    </div>
+  </div>
+</div>
+
+<!-- RIGHT COLUMN -->
+<div class="right-col">
+  <div class="section">
+    <h2>Recent Names (Click to Restore)</h2>
+    <div id="recent"></div>
+  </div>
+
+  <div class="section">
+    <h2>Preview</h2>
+    <div id="preview"></div>
+  </div>
+
+  <div class="btn-row">
+    <button class="save-btn" id="saveBtn">Save to Recent</button>
+    <button class="clear-btn" id="clearBtn">Clear All</button>
+  </div>
+
+  <div class="section">
+    <h2>Output Code (Copy-Paste to RimWorld)</h2>
+    <div id="out" contenteditable></div>
+  </div>
+</div>
+
+<!-- DOGGO BUTTON -->
+<button id="secretBtn" title="Click for secret menu...">
+  <span>??</span>
+</button>
+
+<!-- DEV MENU -->
+<div id="devMenu">
+  <h3>?? Dev Doggo Panel ??</h3>
+  <div class="dev-opts">
+    <label class="dev-label"><input type="checkbox" id="weebMode"> ?? Weeb Mode (Cute Anime)</label>
+    <label class="dev-label"><input type="checkbox" id="rainbowBg"> ?? Rainbow BG (Animated)</label>
+    <label class="dev-label"><input type="checkbox" id="doggoMode"> ?? Doggo Mode</label>
+    <label class="dev-label"><input type="checkbox" id="devBark"> ??? Bark on Click</label>
+  </div>
+</div>
+
+</div>
+
+<div id="toast">Saved!</div>
+<div id="flashMsg"></div>
+
+<script>
+// === ALL JS ===
+let activeColor = 'c1';
+const wheel = document.getElementById('wheel');
+const dot = document.getElementById('dot');
+const size = 220;
+const center = size / 2;
+const ringOuter = 110;
+let isDragging = false;
+
+// EFFECTS
+const effectBoxes = ['default','bw','grad','randGrad','rainbowStatic','rainbowAnim','random','invert','pastel'];
+let currentEffect = 'grad';
+
+document.getElementById(currentEffect).checked = true;
+updateLabelClasses();
+
+effectBoxes.forEach(id => {
+  const checkbox = document.getElementById(id);
+  checkbox.addEventListener('click', (e) => {
+    const isCurrentlyChecked = checkbox.checked;
+    if (currentEffect === id && !isCurrentlyChecked) {
+      e.preventDefault();
+      checkbox.checked = true;
+      refreshCurrentEffect();
+    } else if (isCurrentlyChecked) {
+      currentEffect = id;
+      effectBoxes.forEach(other => {
+        if (other !== id) document.getElementById(other).checked = false;
+      });
+      if (id === 'randGrad') randomizeGradient();
+      else if (id === 'pastel') randomizePastelBase();
+      generate();
+    }
+    updateLabelClasses();
+  });
+});
+
+function updateLabelClasses() {
+  document.querySelectorAll('.opt-label').forEach(lbl => {
+    const cb = lbl.querySelector('input[type="checkbox"]');
+    lbl.classList.toggle('checked', cb && cb.checked);
+  });
+}
+
+function refreshCurrentEffect() {
+  if (currentEffect === 'randGrad') randomizeGradient();
+  else if (currentEffect === 'pastel') randomizePastelBase();
+  generate();
+}
+
+function randomizeGradient() {
+  const randHex = () => '#'+Math.floor(Math.random()*16777215).toString(16).padStart(6,'0');
+  document.getElementById('c1').value = randHex();
+  document.getElementById('c2').value = randHex();
+}
+
+function randomizePastelBase() {
+  const hue = Math.floor(Math.random() * 360);
+  document.getElementById('hue').value = hue;
+}
+
+// DEV MENU
+const secretBtn = document.getElementById('secretBtn');
+const devMenu = document.getElementById('devMenu');
+const bgParty = document.getElementById('bgParty');
+secretBtn.onclick = () => devMenu.classList.toggle('show');
+
+let currentDevMode = null;
+let rainbowBgInterval = null;
+
+// WEEB GIFS (working)
+const weebGifs = [
+  'https://media.tenor.com/3z4Z0d5z3z4AAAAj/anime-cute.gif',
+  'https://media.tenor.com/1Z1Z1d6a4a5AAAAj/kawaii-anime.gif',
+  'https://media.tenor.com/2Z2Z2d7b5b6AAAAj/anime-blush.gif',
+  'https://media.tenor.com/3Z3Z3d8c6c7AAAAj/anime-happy.gif',
+  'https://media.tenor.com/4Z4Z4d9d7d8AAAAj/anime-cat-girl.gif'
+];
+
+document.getElementById('weebMode').onclick = () => {
+  const enabled = document.getElementById('weebMode').checked;
+  if (enabled) {
+    if (currentDevMode) document.getElementById(currentDevMode).checked = false;
+    currentDevMode = 'weebMode';
+    const gif = weebGifs[Math.floor(Math.random() * weebGifs.length)];
+    bgParty.style.backgroundImage = `url('${gif}')`;
+    bgParty.style.backgroundSize = 'cover';
+    bgParty.style.backgroundPosition = 'center';
+    stopRainbowBg();
+  } else {
+    clearBgParty();
+  }
+};
+
+document.getElementById('rainbowBg').onclick = () => {
+  const enabled = document.getElementById('rainbowBg').checked;
+  if (enabled) {
+    if (currentDevMode) document.getElementById(currentDevMode).checked = false;
+    currentDevMode = 'rainbowBg';
+    startRainbowBg();
+  } else {
+    stopRainbowBg();
+    clearBgParty();
+  }
+};
+
+function startRainbowBg() {
+  if (rainbowBgInterval) clearInterval(rainbowBgInterval);
+  rainbowBgInterval = setInterval(() => {
+    const hue = Date.now() / 20 % 360;
+    bgParty.style.background = `linear-gradient(${hue}deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3)`;
+  }, 50);
+}
+
+function stopRainbowBg() {
+  if (rainbowBgInterval) clearInterval(rainbowBgInterval);
+}
+
+function clearBgParty() {
+  currentDevMode = null;
+  bgParty.style.background = 'transparent';
+  bgParty.style.backgroundImage = 'none';
+}
+
+// DOGGO MODE
+let doggoInterval = null;
+document.getElementById('doggoMode').onclick = () => {
+  const enabled = document.getElementById('doggoMode').checked;
+  if (enabled) {
+    if (currentDevMode) document.getElementById(currentDevMode).checked = false;
+    currentDevMode = 'doggoMode';
+    startDoggoRain();
+    flashMessage("MADE BY GROK (And Averagedoggo) ????");
+  } else {
+    stopDoggoRain();
+    clearBgParty();
+  }
+};
+
+function startDoggoRain() {
+  doggoInterval = setInterval(() => {
+    const emoji = Math.random() < 0.7 ? '??' : '??';
+    const el = document.createElement('div');
+    el.className = 'doggo-rain';
+    el.textContent = emoji;
+    el.style.left = Math.random() * 100 + 'vw';
+    el.style.animationDuration = (Math.random() * 3 + 2) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 6000);
+  }, 300);
+}
+
+function stopDoggoRain() {
+  if (doggoInterval) clearInterval(doggoInterval);
+  document.querySelectorAll('.doggo-rain').forEach(e => e.remove());
+}
+
+function flashMessage(msg) {
+  const flash = document.getElementById('flashMsg');
+  flash.textContent = msg;
+  flash.style.opacity = 0;
+  setTimeout(() => {
+    flash.style.animation = 'none';
+    void flash.offsetWidth;
+    flash.style.animation = 'flash 2s ease-out forwards';
+  }, 100);
+}
+
+document.getElementById('devBark').onclick = () => {
+  const barks = ['?? Woof!', '?? Arf!', '?? Bark!'];
+  flashMessage(barks[Math.floor(Math.random() * barks.length)]);
+};
+
+// === RECENT NAMES ===
+const recentList = document.getElementById('recent');
+let recentNames = JSON.parse(localStorage.getItem('recentNames') || '[]');
+
+function updateRecentList() {
+  recentList.innerHTML = '';
+  if (recentNames.length === 0) {
+    const empty = document.createElement('div');
+    empty.textContent = '(empty)';
+    empty.style.color = '#666'; empty.style.fontStyle = 'italic'; empty.style.padding = '8px';
+    recentList.appendChild(empty);
+    return;
+  }
+  recentNames.forEach((item, idx) => {
+    const div = document.createElement('div');
+    div.className = 'recent-item';
+
+    const previewDiv = document.createElement('div');
+    previewDiv.className = 'recent-preview';
+    previewDiv.innerHTML = item.preview;
+    previewDiv.title = 'Click to restore';
+    previewDiv.onclick = () => restoreItem(item);
+
+    const removeBtn = document.createElement('div');
+    removeBtn.className = 'remove-btn';
+    removeBtn.textContent = 'X';
+    removeBtn.title = 'Remove from recent';
+    removeBtn.onclick = (e) => {
+      e.stopPropagation();
+      recentNames.splice(idx, 1);
+      localStorage.setItem('recentNames', JSON.stringify(recentNames));
+      updateRecentList();
+    };
+
+    div.appendChild(previewDiv);
+    div.appendChild(removeBtn);
+    recentList.appendChild(div);
+  });
+}
+
+function restoreItem(item) {
+  document.getElementById('out').textContent = item.code;
+  document.getElementById('inp').value = item.plain;
+  document.getElementById('c1').value = item.c1;
+  document.getElementById('c2').value = item.c2;
+  currentEffect = item.effect;
+  effectBoxes.forEach(id => {
+    const checked = (id === item.effect);
+    document.getElementById(id).checked = checked;
+  });
+  updateLabelClasses();
+  generate();
+}
+updateRecentList();
+
+document.getElementById('saveBtn').onclick = () => {
+  const code = document.getElementById('out').textContent.trim();
+  if (!code) return;
+  const previewHtml = document.getElementById('preview').innerHTML;
+  const plain = document.getElementById('inp').value;
+  const c1 = document.getElementById('c1').value;
+  const c2 = document.getElementById('c2').value;
+  const newItem = { code, preview: previewHtml, plain, c1, c2, effect: currentEffect };
+  recentNames = recentNames.filter(n => n.code !== code);
+  recentNames.unshift(newItem);
+  if (recentNames.length > 5) recentNames.pop();
+  localStorage.setItem('recentNames', JSON.stringify(recentNames));
+  updateRecentList();
+  toast('Saved!');
+};
+
+document.getElementById('clearBtn').onclick = () => {
+  if (confirm('Clear all recent names?')) {
+    recentNames = [];
+    localStorage.setItem('recentNames', '[]');
+    updateRecentList();
+    toast('Cleared!');
+  }
+};
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.opacity = 1;
+  setTimeout(() => t.style.opacity = 0, 1200);
+}
+
+// COLOR WHEEL, GENERATE, ETC. (UNCHANGED)
+wheel.addEventListener('mousedown', e => { isDragging = true; activeColor = e.button === 0 ? 'c1' : 'c2'; pickFromWheel(e); });
+wheel.addEventListener('mousemove', e => { if (isDragging) pickFromWheel(e); });
+wheel.addEventListener('mouseup', () => isDragging = false);
+wheel.addEventListener('mouseleave', () => isDragging = false);
+wheel.addEventListener('contextmenu', e => e.preventDefault());
+wheel.addEventListener('dblclick', copyHex);
+
+function pickFromWheel(e) {
+  const rect = wheel.getBoundingClientRect();
+  const cx = rect.left + center, cy = rect.top + center;
+  const dx = e.clientX - cx, dy = e.clientY - cy;
+  const dist = Math.hypot(dx, dy);
+  if (dist > ringOuter) return;
+  let hue = (Math.atan2(dy, dx) * 180 / Math.PI + 450) % 360;
+  updateAll(activeColor, hue, 100, 50);
+  showDot(dx, dy);
+}
+
+const hueSlider = document.getElementById('hue');
+const satSlider = document.getElementById('sat');
+const lightSlider = document.getElementById('light');
+
+[hueSlider, satSlider, lightSlider].forEach(s => {
+  s.oninput = () => {
+    const h = hueSlider.value;
+    const s = satSlider.value;
+    const l = lightSlider.value;
+    updateAll(activeColor, h, s, l);
+    updateDotFromHSL(h, s, l);
+    generate();
+  };
+});
+
+function updateAll(target, h, s, l) {
+  const hex = hslToHex(h, s, l);
+  document.getElementById(target).value = hex;
+  hueSlider.value = h; satSlider.value = s; lightSlider.value = l;
+  generate();
+}
+
+function updateDotFromHSL(h, s, l) {
+  const angleRad = (h - 90) * Math.PI / 180;
+  const radius = ringOuter * (s / 100);
+  const x = center + radius * Math.cos(angleRad);
+  const y = center + radius * Math.sin(angleRad);
+  dot.style.left = `${x}px`;
+  dot.style.top = `${y}px`;
+  dot.style.opacity = 1;
+}
+function showDot(dx, dy) {
+  dot.style.left = `${center + dx}px`;
+  dot.style.top = `${center + dy}px`;
+  dot.style.opacity = 1;
+}
+
+function copyHex(e) {
+  const rect = wheel.getBoundingClientRect();
+  const cx = rect.left + center, cy = rect.top + center;
+  const dx = e.clientX - cx, dy = e.clientY - cy;
+  const dist = Math.hypot(dx, dy);
+  if (dist > ringOuter) return;
+  let hue = (Math.atan2(dy, dx) * 180 / Math.PI + 450) % 360;
+  const hex = hslToHex(hue, 100, 50);
+  navigator.clipboard.writeText(hex);
+  toast('Copied!');
+}
+
+function hslToHex(h, s, l) {
+  s /= 100; l /= 100;
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+  const m = l - c / 2;
+  let r = 0, g = 0, b = 0;
+  if (h < 60)   { r = c; g = x; b = 0; }
+  else if (h < 120)  { r = x; g = c; b = 0; }
+  else if (h < 180) { r = 0; g = c; b = x; }
+  else if (h < 240) { r = 0; g = x; b = c; }
+  else if (h < 300) { r = x; g = 0; b = c; }
+  else { r = c; g = 0; b = x; }
+  const toHex = v => Math.round((v + m) * 255).toString(16).padStart(2, '0');
+  return '#' + toHex(r) + toHex(g) + toHex(b);
+}
+
+function hexToHsl(hex) {
+  const r = parseInt(hex.slice(1,3),16)/255;
+  const g = parseInt(hex.slice(3,5),16)/255;
+  const b = parseInt(hex.slice(5,7),16)/255;
+  const max = Math.max(r,g,b), min = Math.min(r,g,b);
+  let h,s,l = (max + min)/2;
+  if (max === min) { h = s = 0; }
+  else {
+    const d = max - min;
+    s = l > 0.5 ? d/(2-max-min) : d/(max+min);
+    switch(max){
+      case r: h = (g-b)/d + (g<b?6:0); break;
+      case g: h = (b-r)/d + 2; break;
+      case b: h = (r-g)/d + 4; break;
+    }
+    h /= 6;
+  }
+  return {h: Math.round(h*360), s: Math.round(s*100), l: Math.round(l*100)};
+}
+
+document.getElementById('c1').oninput = () => {
+  const {h,s,l} = hexToHsl(document.getElementById('c1').value);
+  activeColor = 'c1';
+  updateAll('c1', h, s, l);
+  updateDotFromHSL(h, s, l);
+};
+document.getElementById('c2').oninput = () => {
+  const {h,s,l} = hexToHsl(document.getElementById('c2').value);
+  activeColor = 'c2';
+  updateAll('c2', h, s, l);
+  updateDotFromHSL(h, s, l);
+};
+
+function hex2rgb(h){ h = h.slice(1); return [0,2,4].map(i=>parseInt(h.substr(i,2),16)); }
+function lerp(a,b,t){ return Math.round(a + (b-a)*t); }
+function rgb2hex(r,g,b){ return '#'+[r,g,b].map(x=>x.toString(16).padStart(2,'0')).join(''); }
+
+let rainbowInterval = null;
+function startRainbowAnim() {
+  if (rainbowInterval) clearInterval(rainbowInterval);
+  rainbowInterval = setInterval(() => {
+    const offset = Date.now() / 40;
+    document.querySelectorAll('#preview span').forEach((s, i) => {
+      const hue = (i * 12 + offset) % 360;
+      s.style.color = `hsl(${hue},100%,50%)`;
+    });
+  }, 40);
+}
+
+function generate(){
+  const text = document.getElementById('inp').value;
+  const isDefault = document.getElementById('default').checked;
+  const bw = document.getElementById('bw').checked;
+  const grad = document.getElementById('grad').checked;
+  const randGrad = document.getElementById('randGrad').checked;
+  const rainbowStatic = document.getElementById('rainbowStatic').checked;
+  const rainbowAnim = document.getElementById('rainbowAnim').checked;
+  const random = document.getElementById('random').checked;
+  const invert = document.getElementById('invert').checked;
+  const pastel = document.getElementById('pastel').checked;
+
+  let previewHtml = '';
+  let outputCode = '';
+
+  const chars = [...text];
+  const len = chars.length || 1;
+
+  for(let i = 0; i < chars.length; i++){
+    let col = '#ffffff';
+
+    if (isDefault) col = null;
+    else if(bw){
+      const t = i / (len - 1);
+      const v = lerp(0, 255, t);
+      col = rgb2hex(v, v, v);
+    }
+    else if(grad || randGrad){
+      const c1 = hex2rgb(document.getElementById('c1').value);
+      const c2 = hex2rgb(document.getElementById('c2').value);
+      const t = i / (len - 1);
+      const r = lerp(c1[0], c2[0], t);
+      const g = lerp(c1[1], c2[1], t);
+      const b = lerp(c1[2], c2[2], t);
+      col = rgb2hex(r, g, b);
+    }
+    else if(rainbowStatic){
+      const hue = (i * 360 / len) % 360;
+      col = hslToHex(hue, 100, 50);
+    }
+    else if(random){
+      col = '#'+Math.floor(Math.random()*16777215).toString(16).padStart(6,'0');
+    }
+    else if(invert){
+      const base = hslToHex(hueSlider.value, satSlider.value, lightSlider.value);
+      const [r,g,b] = hex2rgb(base);
+      col = rgb2hex(255-r, 255-g, 255-b);
+    }
+    else if(pastel){
+      const baseHue = parseInt(hueSlider.value);
+      const hue = (i * 30 + baseHue) % 360;
+      col = hslToHex(hue, 70, 85);
+    }
+
+    const esc = chars[i].replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const colorTag = col ? `<color=${col}>${esc}</color>` : esc;
+    previewHtml += col ? `<span style="color:${col}">${esc}</span>` : esc;
+    outputCode += colorTag;
+  }
+
+  document.getElementById('preview').innerHTML = previewHtml;
+  document.getElementById('out').textContent = outputCode;
+
+  if (rainbowAnim) startRainbowAnim();
+  else if (rainbowInterval) clearInterval(rainbowInterval);
+}
+
+document.querySelectorAll('input,textarea').forEach(el => {
+  if (el.type !== 'checkbox' || !effectBoxes.includes(el.id)) {
+    if (el.type !== 'range' && el.type !== 'color') el.oninput = generate;
+  }
+});
+
+generate();
+updateRecentList();
+</script>
+</body>
+</html>
