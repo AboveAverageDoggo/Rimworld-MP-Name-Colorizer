@@ -1,3 +1,12 @@
 This is a Simple Rimworld Name Colorizer for the Phinix mod.
-simply enter your name, choose one of the lovely options and then copy the output and paste it into the name field within the settings menu.
-You can Left click to select Gradiant color 1 on the color wheel, and Right click to select color two.
+-----------------------------------------------------------
+- How to install -
+Download the file and open it, WOW!
+(OR - Download the file, -> Right click -> open with -> notepad / any text editor -> copy the code and paste it into any code previewer if you have an old browser)
+
+-How to use -
+----------------------------------------------------------------------------------
+Left click / Right click - Select color 1 and two for Gradiant
+Click an option to enable it, Wow!
+Copy paste the output to the Rimworld Name Option within the chat settings window.
+----------------------------------------------------------------------------------
