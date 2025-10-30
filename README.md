@@ -10,3 +10,4 @@ How to use
 - Click an option to enable it, Wow!
 - Copy paste the output to the Rimworld Name Option within the chat settings window.
 ----------------------------------------------------------------------------------
+<img width="1111" height="941" alt="ColorizerReleasePreview" src="https://github.com/user-attachments/assets/c64ccc85-93fd-40d6-bc86-5f0f82d65695" />
